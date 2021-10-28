@@ -1,7 +1,8 @@
+
 import re
 
 command = {"CREATE", "INSERT", "SELECT", "DELETE", "EXIT"}
-str = '   INSERT INTO table (5, 9, d);text;12345'
+#str = '   INSERT INTO table (5, 9, d);text;12345'
 #str=input("Enter your command: ")
 #str = str.strip()
 def text_cleaner(str):
@@ -12,7 +13,7 @@ def text_cleaner(str):
     inpt= inpt.split(' ', 1)
     print(inpt)
     return inpt
-inpt=text_cleaner(str)
+#inpt=text_cleaner(str)
 
 def comand_recog(inpt):
     
@@ -27,12 +28,15 @@ def comand_recog(inpt):
         comand_recog(inpt)
 
     return inpt
-cmnd=comand_recog(inpt)
+#cmnd=comand_recog(inpt)
 def command_type(cmnd):
   if cmnd[0] == "CREATE":
       print("The command is CREATE")
       tablename= cmnd[1].split(' ', 1)
-
+      if len(tablename)<2:
+          #tablename[1] = input("Enter names of columns: ")
+          tablename.append(input("Enter names of columns: "))
+          
       while re.search(r'^([a-zA-Z][a-zA-Z0-9_]*)', tablename[0]) == None:
           print("Wrong TableName pattern")
           tablename[0] = input("Try a correct name now ")
@@ -110,6 +114,16 @@ def command_type(cmnd):
       print("The command is EXIT")
       print("Thanks, bye")
       SystemExit()
-command_type(cmnd)
+#command_type(cmnd)
+while True:
+    str=input("Enter your command: ")
+    if str == "EXIT":
+     print("The command is EXIT")
+     print("Thanks, bye")
+     break
+    inpt=text_cleaner(str)
+    cmnd=comand_recog(inpt)
+    command_type(cmnd)
+
 
 
