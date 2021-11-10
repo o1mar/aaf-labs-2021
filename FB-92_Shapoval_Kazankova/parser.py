@@ -21,7 +21,7 @@ def comand_recog(inpt):
     print(inpt[0])
     if inpt[0] in command: 
         print("I know this command")
-        print(inpt[0])
+        #print(inpt[0])
             
     else: 
         print("What is the command? O-o\n Enter an existing command, please")
@@ -31,14 +31,14 @@ def comand_recog(inpt):
 #cmnd=comand_recog(inpt)
 def command_type(cmnd):
   if cmnd[0] == "CREATE":
-      print("The command is CREATE")
+     # print("The command is CREATE")
       tablename= cmnd[1].split(' ', 1)
       #str = tablename[1].split(' ')
-      print(tablename,  "columns")
+      #print(tablename,  "columns")
       if re.search(r'^([a-zA-Z][a-zA-Z0-9_]*)', tablename[0]) == None:
           print("Wrong TableName pattern")
           return 
-      print(tablename[1], "columns here")
+      #print(tablename[1], "columns here")
      # if re.match(r'[^\(*\)]', tablename[1]) != None:
         #  print ("you should put columns in brackets")
           #return
@@ -49,17 +49,17 @@ def command_type(cmnd):
 
       print(cmnd)
       strtext=tablename[1]
-      print(strtext, "before split")
+      #print(strtext, "before split")
      # strtext=strtext[strtext.find("(")+1: strtext.find(')')].split(', ')
       strtext = strtext.split(', ') 
-      print(strtext, "after")
+      #print(strtext, "after")
       for i in strtext:
-       print(i, "i column")
+       #print(i, "i column")
        if re.search(r'^([a-zA-Z][a-zA-Z0-9_]*)', i) == None:
          print("Wrong ColumnName pattern")
          return 
 
-      print(strtext,  "ate")
+     # print(strtext,  "ate")
       isIndexed=[ ]
       for i in strtext:
           match = re.search(r"INDEXED", i, re.IGNORECASE)
@@ -67,16 +67,16 @@ def command_type(cmnd):
               #print("EL is INDEXED")
               i = re.sub(r'[ ].*','', i )
               isIndexed.append(i)
-      print(isIndexed)
+      #print(isIndexed)
   if cmnd[0] == "INSERT":
-      print("The command is INSERT")
+     # print("The command is INSERT")
       cmnd[1] = re.sub(r'INTO ','', cmnd[1], flags = re.IGNORECASE)
-      print(cmnd)
+     # print(cmnd)
       tablename = cmnd[1].split(' ', 1)
       if re.search(r'^([a-zA-Z][a-zA-Z0-9_]*)', tablename[0])  == None:
           print("TableName doesn`t exist")
           return
-      print(cmnd)
+      #print(cmnd)
       strtext=tablename[1]
       strtext=strtext.split(', ')
       for i in range (len(strtext)):
@@ -85,18 +85,18 @@ def command_type(cmnd):
            return
       print(strtext)
   if cmnd[0] == "SELECT":
-      print("The command is SELECT")
+     # print("The command is SELECT")
       strtext=cmnd[1]
       strtext = re.sub(r"FROM",   "FROM", strtext, flags = re.IGNORECASE)
-      print(strtext)
+     # print(strtext)
       selinf = strtext[0:strtext.find("FROM")].replace(r',', ' ').split()
       #print(selinf)
       for i in selinf:
               match = re.search(r'COUNT|MAX|AVG', i, re.IGNORECASE)
               if match !=None: print(i)
-      print(strtext)
+     # print(strtext)
       afterFrom = strtext[strtext.find("FROM")+5:].split(' ', 1)
-      print(afterFrom)
+      #print(afterFrom)
       if re.search(r'^([a-zA-Z][a-zA-Z0-9_]*)', afterFrom[0])  == None:
           print("TableName doesn`t exist")
           return
@@ -111,7 +111,7 @@ def command_type(cmnd):
               print("Whong syntax after GROUP_BY")
               return
   if cmnd[0] == "DELETE":
-      print("The command is DELETE")
+      #print("The command is DELETE")
       cmnd[1] = re.sub(r'FROM ','', cmnd[1], flags = re.IGNORECASE)
       tablename = cmnd[1].split(' ', 1)
       if re.search(r'^([a-zA-Z][a-zA-Z0-9_]*)', tablename[0])  == None:
@@ -129,11 +129,11 @@ def command_type(cmnd):
 #command_type(cmnd)
 
 while True:
-    str=input("THE BEGINNING Enter your command: ")
+    str=input("Hello! Enter your command: ")
     #str = '   dElete  fRom table whERE 5 = 5 ;text;12345'
     #if str == "EXIT":
     if re.match(r'EXIT', str, re.IGNORECASE) !=None:
-     print("The command is EXIT")
+     #print("The command is EXIT")
      print("Thanks, bye")
      break
      #SystemExit()
