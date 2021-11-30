@@ -9,14 +9,13 @@ def text_cleaner(str):
     inpt=re.sub(r"(^\s+)|(\(\s*)|(s*\))", "", inpt)
     inpt=re.sub(r"\s+", " ", inpt)
     inpt=re.sub(r"(\s*,)", ",", inpt)
+    inpt=inpt.strip()
     inpt= inpt.split(' ', 1)
-    #print("!!!!!!!!!The input we have: ", inpt)
     return inpt
 def comand_recog(inpt):
     inpt[0]=inpt[0].upper()
-    print(inpt[0])
     if inpt[0] in command: 
-        print("I know this command")
+        pass
     else: 
         print("What is the command? O-o\n Enter an existing command, please")
         return
@@ -31,7 +30,6 @@ def command_type(cmnd):
       if len(tablename)<2:
            print ("Where are column names? Try again")
            return
-      #print(cmnd)
       strtext=tablename[1]
       strtext = strtext.split(', ') 
       for i in strtext:
@@ -58,7 +56,6 @@ def command_type(cmnd):
           if re.search(r'^([-]?[0-9]+$)', strtext[i])  == None:
            print("You can insert only numbers. ", strtext[i], ": is not a number")
            return
-      print(strtext)
       cmd = 2
   if cmnd[0] == "SELECT":
       
@@ -92,32 +89,15 @@ def command_type(cmnd):
           return
       if len(tablename)>1:
         if  re.search(r'WHERE', tablename[1], re.IGNORECASE)!=None:
-          #print (tablename[1])
           if re.match(r'WHERE (-?[a-zA-Z0-9_]+ (=|!=|>|<|>=|<=) -?[a-zA-Z0-9_]+)', tablename[1], re.IGNORECASE)==None:
-          #if re.match(r'WHERE (-?[a-zA-Z0-9_]+ ([ = | > | < ])|([ >= | <=])|([!=]) -?[a-zA-Z0-9_]+)', tablename[1], re.IGNORECASE)==None:
               print("Whong syntax after WHERE")
               return
       cmd = 4
   if cmnd[0] == "EXIT":
-      #print("The command is EXIT")
       print("Thanks, bye")
       SystemExit()
   return cmd, cmnd[1]
-'''while True:
-    str = input('> ')
-    if re.match(r'EXIT', str, re.IGNORECASE) !=None:
-     print("Thanks, bye")
-     break
-    try:
-     inpt=text_cleaner(str)
-    except: print("Something went wrong in text_cleaner")
-    try:
-     cmnd=comand_recog(inpt)
-    except: print("Something went wrong in comand_recog")
-    try:
-     command_type(cmnd)
-    except: print("Something went wrong in command_type")'''
-   
+
 
 
 
