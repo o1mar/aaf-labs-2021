@@ -2,9 +2,12 @@ import re
 import sys
 import ourparser as p
 import comands as c
+import numpy as np
 from tabulate import tabulate
 
 tables = {}
+
+
 
 while True:
    str = ''
@@ -13,7 +16,7 @@ while True:
        str+=line
        if ';' in line: 
            break
-   print(str, 'string')
+   #print(str, 'string')
    if re.match(r'EXIT', str, re.IGNORECASE) !=None:
      print("Thanks, bye")
      break
@@ -36,6 +39,7 @@ while True:
      name, tb = c.insert(a, tables)
      tables.update({name: tb})
     elif cmd == 3:
+     
      c.select(a, tables)
     elif cmd == 4:
      tables = c.delete(a, tables)

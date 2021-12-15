@@ -1,16 +1,36 @@
 import re
+import indexes as inde
 from tabulate import tabulate
+from sortedcontainers import SortedDict
+
+# tables:  keys(names) -> values(tb[rows, tables])
+
 
 def create(a, tables):
-    a = re.sub(r"(,)|(INDEXED)", '', a)
+    isIndexed=[ ]
+    ind = a.split(' ', 1)[1]
+    ind = ind.split(', ')
+    for i in ind:
+          match = re.search(r"INDEXED", i, re.IGNORECASE)
+          if match != None:
+              i = re.sub(r" INDEXED", '', i, flags=re.IGNORECASE)
+              isIndexed.append(i)
+    
+    a = re.sub(r"INDEXED|(,)", '', a, flags=re.IGNORECASE)
     a = a.split()
+    #print(a, 'ASZ')
+    #print(isIndexed, 'isIndexed')
     name = a[0]
     if name in tables.keys(): print("Table already exists")
     else:
+       indexes = { }
+       for i in isIndexed:
+         indexes[i] = { }
        columns = a[1:]
        rows = []
-       tb = [rows, columns]
+       tb = [rows, columns, indexes]
        print('Table', name, 'has been created')
+       #print(indexes, 'indexes')
        return name, tb
 
 def insert(a, tables):
@@ -21,12 +41,26 @@ def insert(a, tables):
     
     if name in tables.keys():
      tb = tables.get(name)
+     rows, columns, indexes = tb
      row = a[1:]
-     if len(row) == len(tb[1]):
-         tb[0].append(row)
+     if len(row) == len(columns):
+         rows.append(row) 
+         for i in indexes.keys():
+           #print(i, 'Here is i')
+           #print(indexes[i], 'value of i')
+           x = row[columns.index(i)]
+           #print(x)
+           if x in indexes[i].keys():
+             #print('exist')
+             indexes[i][x].append(len(rows))
+           else:
+             #print('new one')
+             indexes[i][x] = [len(rows)]
+           #print(tb[2], 'indeses')
          tables.update({name: tb})
          #print (tabulate(tb[0], tb[1], tablefmt="grid"))
          print('1 row has been added')
+         #print(tb[2], 'INDEXES')
      else: print("The amount of values must be equal the amount of columns!")
      return name, tb
      
@@ -35,6 +69,7 @@ def insert(a, tables):
 def select(a, tables):
     a = re.sub(',', '', a)
     a = a.split()
+    #match = re.search(r'COUNT|MAX|AVG', a, re.IGNORECASE)
 
     for i in range(0, len(a)): 
         if a[i] == 'from':
@@ -49,10 +84,17 @@ def select(a, tables):
     if name in tables.keys():
      t = tables.get(name)
      tb = t.copy()
-     rows, columns = tb
+     rows, columns, indexes = tb
+     if curCol[0]=='*':curCol = columns
 
      if len(condition) == 3:
           if condition[1] == '=': condition[1] = '=='
+          if condition[0] in indexes or condition[2] in indexes:
+            # col = col in indexes throw
+            if condition[1] != '!=':
+              print('Will count using indexes')
+              inde.select_with_indexes(curCol, condition, tb)
+              return 
           if condition[0] in columns and condition[2] in columns:
             i = 0
             selectedRows = []
@@ -91,9 +133,11 @@ def select(a, tables):
           selectedRows = temp
           selectedRows = list(zip(*selectedRows))
           print(tabulate(selectedRows, curCol, tablefmt="grid"))
-     elif curCol[0] == '*': print(tabulate(rows, columns, tablefmt="grid"))
+     #elif curCol[0] == '*': 
+      #  print(tabulate(rows, columns, tablefmt="grid"))
      else: 
          selectedRows = []
+         
          for i in curCol:
           row = []
           if i in columns:
@@ -109,19 +153,33 @@ def delete(a, tables):
     name = a[0]
     if name in tables.keys():
      tb = tables.get(name)
-     rows, columns = tb
+     rows, columns, indexes = tb
      if len(a)>1:
         if a[3] == '=': a[3] = '=='
         d = 0
-        print(a[2], a[4])
+        #print(a[2], a[4])
         if a[2] in columns and a[4] in columns:
             i = 0
             while i < len(rows):
                 c = rows[i][columns.index(a[2])], a[3], rows[i][columns.index(a[4])]
                 c = ''.join(c)
 
+#indexes={in1:{'3':[1], '4':[2,3]}, in2:{'3':[1,3], '2':[2]}}
                 if eval(c) == True:
                  rows.pop(i)
+                 #print(indexes.values())
+                 for key in indexes.keys():
+                   #print(key, 'column')
+                   #print(indexes[key], 'aaa')
+                   #print(indexes[key].keys(), 'bbb')
+                   #print(indexes[key].values(), 'ccc')
+                   for l, k in indexes[key].items():
+                     #print(l, k, 'key: values')
+                     if i+1 in k:
+                       #print(i+1 , "III")
+                       #print(indexes[key][l], 'where del')
+                       indexes[key][l].remove(i+1)
+                     
                  d += 1
                 else: i +=1
 
@@ -133,6 +191,17 @@ def delete(a, tables):
 
                 if eval(c) == True:
                  rows.pop(i)
+                 for key in indexes.keys():
+                   #print(key, 'column')
+                   #print(indexes[key], 'aaa')
+                   #print(indexes[key].keys(), 'bbb')
+                   #print(indexes[key].values(), 'ccc')
+                   for l, k in indexes[key].items():
+                     #print(l, k, 'key: values')
+                     if i+1 in k:
+                       #print(i+1 , "III")
+                       #print(indexes[key][l], 'where del')
+                       indexes[key][l].remove(i+1)
                  d += 1
                 else: i +=1
 
@@ -144,9 +213,21 @@ def delete(a, tables):
 
                 if eval(c) == True:
                  rows.pop(i)
+                 for key in indexes.keys():
+                   #print(key, 'column')
+                   #print(indexes[key], 'aaa')
+                   #print(indexes[key].keys(), 'bbb')
+                   #print(indexes[key].values(), 'ccc')
+                   for l, k in indexes[key].items():
+                     #print(l, k, 'key: values')
+                     if i+1 in k:
+                       #print(i+1 , "III")
+                       #print(indexes[key][l], 'where del')
+                       indexes[key][l].remove(i+1)
                  d += 1
                 else: i +=1
         tb[0] = rows
+        print(indexes, 'indexes')
         tables.update({name: tb})
         print(d, 'rows have been deleted from the table', name)
         #print(tabulate(tb[0], tb[1], tablefmt="grid"))  

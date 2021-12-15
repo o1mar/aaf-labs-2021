@@ -36,12 +36,7 @@ def command_type(cmnd):
        if re.search(r'^([a-zA-Z][a-zA-Z0-9_]*)', i) == None:
          print("Wrong ColumnName pattern")
          return 
-      isIndexed=[ ]
-      for i in strtext:
-          match = re.search(r"INDEXED", i, re.IGNORECASE)
-          if match != None:
-              i = re.sub(r'[ ].*','', i )
-              isIndexed.append(i)
+      
       cmd = 1
   if cmnd[0] == "INSERT":
       
@@ -64,7 +59,7 @@ def command_type(cmnd):
       selinf = strtext[0:strtext.find("FROM")].replace(r',', ' ').split()
       for i in selinf:
               match = re.search(r'COUNT|MAX|AVG', i, re.IGNORECASE)
-              if match !=None: print(i)
+              if match !=None: print('')
       afterFrom = strtext[strtext.find("FROM")+5:].split(' ', 1)
       if re.search(r'^([a-zA-Z][a-zA-Z0-9_]*)', afterFrom[0])  == None:
           print("TableName doesn`t exist")
