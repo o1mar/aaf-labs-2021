@@ -44,7 +44,7 @@ def select_with_indexes(curCol, condition, tb):
           #print('before zip')
           selectedRows = list(zip(*selectedRows))
           ##print(selectedRows, curCol, 'hi there')
-          print(tabulate(selectedRows, curCol, tablefmt="grid"))
+          print(tabulate(selectedRows, curCol, tablefmt="pretty"))
           return
      #elif curCol[0] == '*': 
       #  print(tabulate(rows, columns, tablefmt="grid"))

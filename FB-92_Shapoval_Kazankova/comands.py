@@ -23,7 +23,7 @@ def create(a, tables):
     name = a[0]
     if name in tables.keys(): print("Table already exists")
     else:
-       indexes = { }
+       indexes = SortedDict()
        for i in isIndexed:
          indexes[i] = { }
        columns = a[1:]
@@ -46,15 +46,12 @@ def insert(a, tables):
      if len(row) == len(columns):
          rows.append(row) 
          for i in indexes.keys():
-           #print(i, 'Here is i')
-           #print(indexes[i], 'value of i')
            x = row[columns.index(i)]
            #print(x)
            if x in indexes[i].keys():
              #print('exist')
              indexes[i][x].append(len(rows))
            else:
-             #print('new one')
              indexes[i][x] = [len(rows)]
            #print(tb[2], 'indeses')
          tables.update({name: tb})
@@ -76,25 +73,54 @@ def select(a, tables):
            name = a[i+1]
            curCol = a[:i] 
            condition = []
+           group = []
         try:
+           if a[i+2] == 'group' :
+             group = a[i+4:]
            if a[i+2] == 'where':
             condition = a[i+3:]
+           if 'group' in condition: condition = condition[:3]
+           #print(condition, group)
         except: pass
 
     if name in tables.keys():
      t = tables.get(name)
      tb = t.copy()
      rows, columns, indexes = tb
-     if curCol[0]=='*':curCol = columns
+     if curCol[0]=='*':
+       curCol = columns
+     if len(group) > 0:
+      for i in curCol: 
+        if i not in group:
+          print('Invalid group by syntax')
+          return
+     if len(group) > 0:
+       if len(group) == 1 and group[0] in indexes:
+         print('Using indexes')
+         row = []
+         for i in indexes[group[0]].keys():
+           row.append(i)
+         print(tabulate(row, group[0], tablefmt="pretty"))
+       else: 
+         print('No use of indexes ')
+         SelectedRows = []
+         for i in rows:
+           row = []
+           #print(i, 'Current row')
+           for col in group:
+             #print(col, 'Group column')
+             row.append(i[columns.index(col)])
+           #print(row, 'we get this')
+           if row not in SelectedRows: 
+             #print('Unique')
+             SelectedRows.append(row)
+         #print(SelectedRows, "selectedRows")
+         print(tabulate(SelectedRows, group, tablefmt="pretty"))
 
-     if len(condition) == 3:
+         
+
+     elif len(condition) == 3:
           if condition[1] == '=': condition[1] = '=='
-          if condition[0] in indexes or condition[2] in indexes:
-            # col = col in indexes throw
-            if condition[1] != '!=':
-              print('Will count using indexes')
-              inde.select_with_indexes(curCol, condition, tb)
-              return 
           if condition[0] in columns and condition[2] in columns:
             i = 0
             selectedRows = []
@@ -104,6 +130,13 @@ def select(a, tables):
                 if eval(c) == True:
                  selectedRows.append(rows[i])
                 i +=1
+          elif condition[0] in indexes or condition[2] in indexes:
+            # col = col in indexes throw
+            if condition[1] != '!=':
+              print('Will count using indexes')
+              inde.select_with_indexes(curCol, condition, tb)
+              return 
+          
           elif condition[0] in columns:
              i = 0
              selectedRows = []
@@ -132,9 +165,8 @@ def select(a, tables):
              temp.append(row)
           selectedRows = temp
           selectedRows = list(zip(*selectedRows))
-          print(tabulate(selectedRows, curCol, tablefmt="grid"))
-     #elif curCol[0] == '*': 
-      #  print(tabulate(rows, columns, tablefmt="grid"))
+          print(tabulate(selectedRows, curCol, tablefmt="pretty"))
+     
      else: 
          selectedRows = []
          
@@ -146,7 +178,7 @@ def select(a, tables):
               row.append(rows[j][ind])
           selectedRows.append(row)
          selectedRows = list(zip(*selectedRows))          
-         print(tabulate(selectedRows, curCol, tablefmt="grid"))
+         print(tabulate(selectedRows, curCol, tablefmt="pretty"))
         
 def delete(a, tables):
     a = a.split()
