@@ -30,18 +30,18 @@ while True:
      cmd = 0
      cmd, a =p.command_type(cmnd)
    except: print("Something went wrong in command_type")
-   try:
+   #try:
    
-    if cmd == 1:
+   if cmd == 1:
      names, tb = c.create(a, tables)
      tables.update({names: tb})
-    elif cmd == 2:
+   elif cmd == 2:
      name, tb = c.insert(a, tables)
      tables.update({name: tb})
-    elif cmd == 3:
+   elif cmd == 3:
      
      c.select(a, tables)
-    elif cmd == 4:
+   elif cmd == 4:
      tables = c.delete(a, tables)
-   except: print ('Something wrong in comands.py')
+   #except: print ('Something wrong in comands.py')
 

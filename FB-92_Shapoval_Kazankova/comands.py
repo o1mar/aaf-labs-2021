@@ -18,19 +18,16 @@ def create(a, tables):
     
     a = re.sub(r"INDEXED|(,)", '', a, flags=re.IGNORECASE)
     a = a.split()
-    #print(a, 'ASZ')
-    #print(isIndexed, 'isIndexed')
     name = a[0]
     if name in tables.keys(): print("Table already exists")
     else:
-       indexes = SortedDict()
+       indexes = {}
        for i in isIndexed:
-         indexes[i] = { }
+         indexes[i] = SortedDict()
        columns = a[1:]
        rows = []
        tb = [rows, columns, indexes]
        print('Table', name, 'has been created')
-       #print(indexes, 'indexes')
        return name, tb
 
 def insert(a, tables):
@@ -42,21 +39,16 @@ def insert(a, tables):
     if name in tables.keys():
      tb = tables.get(name)
      rows, columns, indexes = tb
-     row = a[1:]
+     row = list(map(int, a[1:]))
      if len(row) == len(columns):
          rows.append(row) 
          for i in indexes.keys():
            x = row[columns.index(i)]
-           #print(x)
            if x in indexes[i].keys():
-             #print('exist')
              indexes[i][x].append(len(rows))
            else:
              indexes[i][x] = [len(rows)]
-           #print(tb[2], 'indeses')
-         #print (tabulate(tb[0], tb[1], tablefmt="grid"))
          print('1 row has been added')
-         #print(tb[2], 'INDEXES')
      else: print("The amount of values must be equal the amount of columns!")
      return name, tb
      
@@ -64,30 +56,30 @@ def insert(a, tables):
     
 def select(a, tables):
     a = re.sub(',', '', a)
-    #a = a.lower()
     a = a.split()
-    #match = re.search(r'COUNT|MAX|AVG', a, re.IGNORECASE)
-    #print('Look: ', a)
 
     for i in range(0, len(a)): 
         if a[i] == 'from':
            name = a[i+1]
-           agg = None
-           if ('avg' in a[i-1]) or ('max' in  a[i-1]) or ('count' in a[i-1]):
-             n = a[i-1][:3]
-             a[i-1] = re.sub(r'avg|count|max', '', a[i-1])
-             agg = (n, a[i-1])  
-             curCol = a[:i-1]
-           else: curCol = a[:i] 
+           j = 1
+           agg = [ ]
+           curCol = a[:i]
+           while re.match(r'avg|max|count', a[i-j], re.IGNORECASE)!=None:
+               n = a[i-j][:3]
+               c = re.sub(r'avg|count|max', '', a[i-j], flags=re.IGNORECASE)
+               agg.append((n, c))
+               curCol = a[:(i-j)]
+               j+=1
+           
            condition = []
            group = []
         try:
-           if a[i+2] == 'group' :
-             group = a[i+4:]
+           if a[i+2] == 'group_by' :
+             group = a[i+3:]
            if a[i+2] == 'where':
             condition = a[i+3:]
-           if 'group' in condition: condition = condition[:3]
-           #print(condition, group)
+           if 'group_by' in condition: condition = condition[:3]
+           
         except: pass
     if name in tables.keys():
      tb = tables.get(name)
@@ -101,7 +93,6 @@ def select(a, tables):
           print('Invalid group by syntax')
           return
      if len(group) > 0:
-       # 3: (1, 4, 6) 5: (2,3) 8: (5) group by
        if len(group) == 1 and group[0] in indexes:
          print('Using indexes')
          ourrows = []
@@ -111,19 +102,19 @@ def select(a, tables):
            aggVal = []
            row.append(i)
            val = 0
-           if agg[0] == 'avg':
-            for j in indexes[group[0]][i] :
-              aggVal.append(int(rows[j-1][columns.index(agg[1])]))
-            val = sum(aggVal)/len(aggVal)
-           if agg[0] == 'max':
-            for j in indexes[group[0]][i] :
-              aggVal.append(int(rows[j-1][columns.index(agg[1])]))
-            val = max(aggVal)
-           if agg[0] == 'cou': val = len(indexes[group[0]][i])
-           row.append(val)
-           print(row, "row")
+           for k in agg:
+            if k[0] == 'avg':
+             for j in indexes[group[0]][i] :
+              aggVal.append(int(rows[j-1][columns.index(k[1])]))
+             val = sum(aggVal)/len(aggVal)
+            if k[0] == 'max':
+             for j in indexes[group[0]][i] :
+              aggVal.append(int(rows[j-1][columns.index(k[1])]))
+             val = max(aggVal)
+            if k[0] == 'cou': val = len(indexes[group[0]][i])
+            row.append(val)
+            curCol.append(k[0])
            ourrows.append(row)
-          curCol.append(agg[0])
           print(tabulate(ourrows, curCol, tablefmt="pretty"))
          else:
           row = []
@@ -135,44 +126,51 @@ def select(a, tables):
        else: 
          print('No use of indexes ')
          SelectedRows = []
-         countAgg = []
-         countAggt = []
+         agval = {}
+         for a in agg:
+           agval[a]=[ ]
          for i in rows:
            row = []
            for col in group:
              row.append(int(i[columns.index(col)]))
-
            if row not in SelectedRows: 
-             countAgg.append(int(i[columns.index(agg[1])]))
-             countAggt.append(1)
              SelectedRows.append(row)
-           else: 
-             countAggt[SelectedRows.index(row)]+=1
-             if agg[0] == 'avg': countAgg[SelectedRows.index(row)]+=int(i[columns.index(agg[1])])
-             if agg[0] == 'max': 
-               if countAgg[SelectedRows.index(row)]<int(i[columns.index(agg[1])]):
-                 countAgg[SelectedRows.index(row)] = i[columns.index(agg[1])]
+             if agg != None:
+               for ag in agg:
+                agval[ag].append([i[columns.index(ag[1])]])
+           elif agg != None: 
+             for ag in agg:
+              agval[ag][SelectedRows.index(row)].append(i[columns.index(ag[1])])
+         if agg != None:
+          for ag in agg:
+            if ag[0] == 'avg':
+               for n, v in enumerate(agval[ag]):
+                 res = sum(v)/len(v)
+                 SelectedRows[n].append(res)
+            elif ag[0] == 'max':
+               for n, k in enumerate(agval[ag]):
+                 res = max(k)
+                 SelectedRows[n].append(res)
+            elif ag[0] == 'cou':
+               for n, s in enumerate(agval[ag]):
+                 res = len(s)
+                 SelectedRows[n].append(res)
+            group.append(ag[0])
+         if len(condition)!=3:
+          print(tabulate(SelectedRows, group, tablefmt="pretty"))
         
-         if agg[0] == 'avg':
-          for j in range(0, len(countAgg)):
-           countAgg[j] /= countAggt[j]
-           SelectedRows[j].append(countAgg[j])
-         elif agg[0] == 'max':
-           for j in range(0, len(countAgg)):
-             SelectedRows[j].append(countAgg[j])
-         elif agg[0] == 'cou':
-           for j in range(0, len(countAggt)):
-             SelectedRows[j].append(countAggt[j])
-         group.append(agg[0])
-         print(tabulate(SelectedRows, group, tablefmt="pretty"))
 
-     elif len(condition) == 3:
+     if len(condition) == 3:
+          
+          if len(group) > 0:  rows = SelectedRows
+          #else: rows = SelectedRows
+          #print(tabulate(SelectedRows, curCol, tablefmt="pretty"))
           if condition[1] == '=': condition[1] = '=='
           if condition[0] in columns and condition[2] in columns:
             i = 0
             selectedRows = []
             while i < len(rows):
-                c = rows[i][columns.index(condition[0])], condition[1], rows[i][columns.index(condition[2])]
+                c = str(rows[i][columns.index(condition[0])]), str(condition[1]), str(rows[i][columns.index(condition[2])])
                 c = ''.join(c)
                 if eval(c) == True:
                  selectedRows.append(rows[i])
@@ -188,7 +186,7 @@ def select(a, tables):
              i = 0
              selectedRows = []
              while i < len(rows):
-                c = rows[i][columns.index(condition[0])], condition[1], condition[2]
+                c = str(rows[i][columns.index(condition[0])]), str(condition[1]), str(condition[2])
                 c = ''.join(c)
                 if eval(c) == True:
                  selectedRows.append(rows[i])
@@ -197,7 +195,7 @@ def select(a, tables):
              i = 0
              selectedRows = []
              while i < len(rows):
-                c = condition[0], condition[1], rows[i][columns.index(condition[2])]
+                c = str(condition[0]), str(condition[1]), str(rows[i][columns.index(condition[2])])
                 c = ''.join(c)
                 if eval(c) == True:
                  selectedRows.append(rows[i])
@@ -232,7 +230,7 @@ def select(a, tables):
           
           
      
-     else: 
+     if len(group)==0 and len(condition)==0: 
          selectedRows = []
          
          for i in curCol:
@@ -243,21 +241,24 @@ def select(a, tables):
               row.append(rows[j][ind])
           selectedRows.append(row)
          if agg != None:
-          if agg[0] ==  'avg':
-            average = 0
+          for i in agg:
+           if i[0] ==  'avg':
+            average = 0 #row ((2,4,5), (0,8,6), (0,3,4))
             count = 0
-            for el in selectedRows[curCol.index(agg[1])]:
+            for e in rows:
+              el = e[columns.index(i[1])]
               average += int(el)
               count+=1
-            print('Average in column', agg[1],  average/count)
-          if agg[0] ==  'max':
+            print('Average in column', i[1],  average/count)
+           if i[0] ==  'max':
             maxi = 0  
-            for el in selectedRows[curCol.index(agg[1])]:
+            for e in rows:
+              el = e[columns.index(i[1])]
               if maxi < int(el):
                 maxi = int(el)
-            print('Max in column', agg[1],  maxi)
-          if agg[0] ==  'cou':
-            print('Number of rows', agg[1],  len(selectedRows[0]))
+            print('Max in column', i[1],  maxi)
+           if i[0] ==  'cou':
+            print('Number of rows', i[1],  len(selectedRows[0]))
          selectedRows = list(zip(*selectedRows))          
          print(tabulate(selectedRows, curCol, tablefmt="pretty"))
          
@@ -298,7 +299,7 @@ def delete(a, tables):
                        #print(i+1 , "III")
                        #print(indexes[key][l], 'where del')
                        #indexes[key][l].remove(i+1)
-                 print(indexes, 'DELETE prosess')
+                 
                  d += 1
                 else: i +=1
 
@@ -330,10 +331,7 @@ def delete(a, tables):
                  d += 1
                 else: i +=1
         tb[0] = rows
-        print(indexes, 'indexes')
-        tables.update({name: tb})
         print(d, 'rows have been deleted from the table', name)
-        #print(tabulate(tb[0], tb[1], tablefmt="grid"))  
      else: 
          print('Table was deleted')
          tables.pop(name)

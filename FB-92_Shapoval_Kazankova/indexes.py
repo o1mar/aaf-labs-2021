@@ -1,50 +1,43 @@
-import re
+
 import numpy as np
 from tabulate import tabulate
-from sortedcontainers import SortedDict
-
+from sortedcontainers import SortedList
 
 def select_with_indexes(curCol, condition, tb):
      rows, columns, indexes = tb
      if curCol[0] =='*':curCol = columns
-     # indexes={col1:{'2':[1,2], '5':[3, 6, 8]}, 
-     #col2:{'1':[1, 2, 3]}}
-     ## col1 = 5
      if len(condition) == 3:
-          if condition[0] in indexes.keys():
-             selectedRows = []
-             for key in indexes[condition[0]].keys():
-               c = key, condition[1], condition[2]
-               c = ''.join(c)
-               if eval(c) == True:
-                selectedRows.append(indexes[condition[0]][key])
-          elif condition[2] in indexes.keys():
-             selectedRows = []
-             for key in indexes[condition[2]].keys():
-               c = condition[0], condition[1], key
-               c = ''.join(c)
-               if eval(c) == True:
-                selectedRows.append(indexes[condition[2]][key])
-          temp = []
-          selectedRows = list(np.concatenate(selectedRows))
-          #print(selectedRows, 'rows')
-          for i in curCol:
-             #print('print what we need')
+       op = condition[1]
+       if condition[0] in indexes.keys():
+         chosenCol = condition[0]
+         num = int(condition[2])
+       elif condition[2] in indexes.keys():
+         chosenCol = condition[2]
+         num = int(condition[0])
+       position = SortedList(indexes[chosenCol].keys()).bisect_left(num)
+       if op == '==':
+         if indexes[chosenCol].keys()[position] == num:
+           selected = indexes[chosenCol][num] 
+       else:
+        if op == '<':
+         keys = indexes[chosenCol].keys()[:position]
+        if op == '>':
+         keys = indexes[chosenCol].keys()[position+1:]
+        if op == '<=':
+         keys = indexes[chosenCol].keys()[:position+1]
+        if op == '>=':
+         keys = indexes[chosenCol].keys()[position:] 
+        selected = list(map(indexes[chosenCol].get, keys))
+        selected = list(np.concatenate(selected))
+       selectedRows = []
+       for i in curCol:
              row = [] 
-             if i in columns:
-                #print("i columns", i, columns, columns.index(i))
-                #ind = columns.index(i)
-                #[3 : [1, 2] 2: [5, 7] 8: [6] ]
-                for j in selectedRows:
-                 #print(rows[j-1][columns.index(i)], 'this')
-                 row.append(rows[j-1][columns.index(i)])
-                 #print(row, 'rownew')
-             temp.append(row)
-          selectedRows = temp
-          #print('before zip')
-          selectedRows = list(zip(*selectedRows))
-          ##print(selectedRows, curCol, 'hi there')
-          print(tabulate(selectedRows, curCol, tablefmt="pretty"))
-          return
-     #elif curCol[0] == '*': 
-      #  print(tabulate(rows, columns, tablefmt="grid"))
+             for j in selected:
+               row.append(rows[j-1][columns.index(i)])
+             selectedRows.append(row)
+       selectedRows = list(zip(*selectedRows))
+       print(tabulate(selectedRows, curCol, tablefmt="pretty"))
+       return
+
+
+
